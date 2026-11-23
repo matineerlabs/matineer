@@ -1,0 +1,289 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root, .dark {
+    --color-dark-bg: 16 16 24;
+    --color-dark-card: 24 24 36;
+    --color-dark-surface: 33 33 48;
+    --color-dark-border: 45 45 66;
+    --color-dark-hover: 42 42 62;
+
+    /* Default Tailwind Slate/Gray approximate colors for dark mode */
+    --color-gray-100: 243 244 246;
+    --color-gray-200: 229 231 235;
+    --color-gray-300: 209 213 219;
+    --color-gray-400: 156 163 175;
+    --color-gray-500: 107 114 128;
+    --color-gray-600: 75 85 99;
+    --color-gray-700: 55 65 81;
+    --color-gray-800: 31 41 55;
+    --color-gray-900: 17 24 39;
+
+    --color-brand-blue: 31 106 165;
+    --color-brand-blueHover: 27 90 140;
+    --color-brand-accent: 37 99 235;
+    --color-brand-accentHover: 29 78 216; /* blue-700 for dark mode */
+    --color-brand-purple: 147 51 234;
+    --color-brand-purpleHover: 168 85 247;
+    --color-brand-green: 22 163 74;     /* #16a34a */
+    --color-brand-greenHover: 21 128 61; /* #15803d */
+    --color-brand-text: 255 255 255;
+  }
+
+  .light {
+    --color-dark-bg: 249 250 251;      /* very light gray for background */
+    --color-dark-card: 255 255 255;     /* white for cards */
+    --color-dark-surface: 243 244 246;  /* slight gray for surfaces */
+    --color-dark-border: 229 231 235;   /* light gray for borders */
+    --color-dark-hover: 229 231 235;    /* hover matching border or slightly darker */
+
+    /* Invert Grays for light mode to maintain contrast */
+    --color-gray-100: 17 24 39;
+    --color-gray-200: 31 41 55;
+    --color-gray-300: 55 65 81;
+    --color-gray-400: 75 85 99;
+    --color-gray-500: 107 114 128;
+    --color-gray-600: 156 163 175;
+    --color-gray-700: 209 213 219;
+    --color-gray-800: 229 231 235;
+    --color-gray-900: 243 244 246;
+
+    /* Light mode pastel brand colors for better contrast with dark text */
+    --color-brand-blue: 147 197 253; /* Tailwind blue-300 */
+    --color-brand-blueHover: 96 165 250; /* Tailwind blue-400 */
+    --color-brand-accent: 96 165 250; /* More vivid: Tailwind blue-400 */
+    --color-brand-accentHover: 59 130 246; /* Tailwind blue-500 */
+    --color-brand-purple: 192 132 252; /* More vivid: Tailwind purple-400 */
+    --color-brand-purpleHover: 168 85 247; /* Tailwind purple-500 */
+    --color-brand-green: 74 222 128; /* Softer green: Tailwind green-400 */
+    --color-brand-greenHover: 34 197 94; /* Tailwind green-500 */
+    --color-brand-text: 17 24 39; /* Dark gray/black for text on brand background */
+  }
+
+  body {
+    background-color: rgb(var(--color-dark-bg));
+    color: rgb(var(--color-gray-200));
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(var(--color-dark-card));
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--color-dark-border));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--color-gray-500));
+}
+
+/* Subtle Cinema Logo Shimmer */
+@keyframes logoShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Ambient Projector Breathing Glow */
+@keyframes ambientGlow {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 0.65;
+    transform: scale(1.04);
+  }
+}
+
+.animate-ambient-glow {
+  animation: ambientGlow 5s ease-in-out infinite;
+}
+
+/* Smooth Badge Ease-in for Badges */
+@keyframes badgeFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(1px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-badge-in {
+  animation: badgeFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Smooth Badge Fade-out for Badges */
+@keyframes badgeFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.94) translateY(-3px);
+  }
+}
+
+.animate-badge-out {
+  animation: badgeFadeOut 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Ratings Badge Pop & Slide Entrance from Left to Right */
+@keyframes ratingsPopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.72) translateX(-10px);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.04) translateX(1px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+  }
+}
+
+.animate-ratings-pop {
+  transform-origin: left center;
+  animation: ratingsPopIn 0.48s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Toast Fade-in */
+@keyframes toastFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: toastFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Staggered Card Cascade Animation */
+@keyframes cardCascadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-card-cascade {
+  animation: cardCascadeIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Snappy Break Card Ease-in */
+@keyframes breakCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-break-in {
+  animation: breakCardIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Hatched Patterns for Trailers & Movie Overlaps in Timeline */
+.bg-hatched-trailers,
+.bg-hatched-trailers-blue {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgb(var(--color-brand-accent) / 0.95),
+    rgb(var(--color-brand-accent) / 0.95) 4px,
+    rgb(var(--color-brand-blue) / 0.9),
+    rgb(var(--color-brand-blue) / 0.9) 8px
+  );
+}
+
+.bg-hatched-trailers-purple {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgb(var(--color-brand-purple) / 0.95),
+    rgb(var(--color-brand-purple) / 0.95) 4px,
+    rgb(var(--color-brand-purpleHover) / 0.9),
+    rgb(var(--color-brand-purpleHover) / 0.9) 8px
+  );
+}
+
+.bg-hatched-trailers-mixed {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgb(var(--color-brand-purple) / 0.95),
+    rgb(var(--color-brand-purple) / 0.95) 4px,
+    rgb(var(--color-brand-accent) / 0.95),
+    rgb(var(--color-brand-accent) / 0.95) 8px
+  );
+}
+
+.bg-hatched-trailers-normal {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgb(var(--color-gray-400) / 0.25),
+    rgb(var(--color-gray-400) / 0.25) 4px,
+    rgb(var(--color-gray-800) / 0.6) 4px,
+    rgb(var(--color-gray-800) / 0.6) 8px
+  );
+}
+
+.bg-hatched-trailers-amber {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(245, 158, 11, 0.9),
+    rgba(245, 158, 11, 0.9) 3px,
+    rgba(180, 83, 9, 0.95) 3px,
+    rgba(180, 83, 9, 0.95) 6px
+  );
+}
+
+/* Muted Slate-Blue Pattern for Trailer Skip Slider Track */
+.bg-hatched-trailers-muted {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgb(var(--color-gray-500) / 0.8),
+    rgb(var(--color-gray-500) / 0.8) 3px,
+    rgb(var(--color-gray-700) / 0.85) 3px,
+    rgb(var(--color-gray-700) / 0.85) 6px
+  );
+}
+
+.bg-hatched-track-subtle {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgb(var(--color-gray-400) / 0.12),
+    rgb(var(--color-gray-400) / 0.12) 3px,
+    rgb(var(--color-dark-card) / 0.6) 3px,
+    rgb(var(--color-dark-card) / 0.6) 6px
+  );
+}

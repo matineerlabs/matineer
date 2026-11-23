@@ -1,0 +1,93 @@
+name: AMC Scraper Canary
+
+on:
+  schedule:
+    # Twice daily:
+    # 13:37 UTC (8:37 AM EST / 9:37 AM EDT) - catches overnight / early-morning changes
+    # 19:37 UTC (2:37 PM EST / 3:37 PM EDT) - catches mid-day AMC deployments before evening prime time
+    - cron: '37 13,19 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: extension
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: extension/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Live AMC Scraper Canary
+        id: canary_test
+        run: npm run canary
+
+      - name: Upload Failed HTML Snapshot Artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: canary-failed-html-snapshot
+          path: extension/canary_failed_snapshot.html
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Open or Update GitHub Issue on Scraper Breakage
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '🚨 [Canary Alert] AMC HTML Parser Canary Failed';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              '### Automated AMC Scraper Canary Failure',
+              '',
+              'The daily live canary check failed to parse movie showtimes across all 3 flagship AMC theaters (Empire 25, Burbank 16, Lincoln Square 13) on HTTP 200 responses.',
+              '',
+              `- **Workflow Run:** [View Run & Download HTML Snapshot Artifact](${runUrl})`,
+              `- **Timestamp:** ${new Date().toISOString()}`,
+              '',
+              '#### Recommended Mitigation Steps',
+              '1. Update `status.json` on the `status` branch (`min_version: "<next_version>"`, `update_available: false`, and a maintenance `message`) so current users know a fix is in progress.',
+              '2. Download the `canary-failed-html-snapshot` artifact from the workflow run and inspect the DOM changes in `extension/src/shared/utils/parser.ts`.',
+              '3. Publish the updated extension version to the Chrome Web Store, then set `update_available: true` in `status.json` on the `status` branch.'
+            ].join('\n');
+
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'scraper-canary'
+            });
+
+            if (existingIssues.data.length > 0) {
+              const issueNumber = existingIssues.data[0].number;
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: `Canary failed again on ${new Date().toISOString()}. [View Workflow Run](${runUrl})`
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['scraper-canary', 'bug']
+              });
+            }

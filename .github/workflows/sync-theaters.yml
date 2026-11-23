@@ -1,0 +1,59 @@
+name: Sync AMC Theaters
+
+on:
+  schedule:
+    # Weekly on Mondays at 12:23 UTC
+    - cron: '23 12 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-theaters:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Sync amc_theaters.json from AMC sitemaps
+        run: node extension/scripts/generate_theaters_from_sitemaps.js --soft-fail-waf --summary-file /tmp/theater-sync-summary.md
+
+      - name: Create or update Pull Request if catalog changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet extension/src/shared/data/amc_theaters.json; then
+            echo "No changes to amc_theaters.json." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          BRANCH="chore/sync-amc-theaters"
+          BASE_BRANCH="${{ github.event.repository.default_branch }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git checkout -B "$BRANCH"
+          git add extension/src/shared/data/amc_theaters.json
+          git commit -m "chore(data): sync amc_theaters.json from AMC sitemaps"
+          git push --force-with-lease origin "$BRANCH"
+
+          EXISTING_PR=$(gh pr list --head "$BRANCH" --base "$BASE_BRANCH" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING_PR" ]; then
+            gh pr edit "$EXISTING_PR" --body-file /tmp/theater-sync-summary.md
+            echo "Updated existing PR #$EXISTING_PR." >> "$GITHUB_STEP_SUMMARY"
+          else
+            gh pr create \
+              --base "$BASE_BRANCH" \
+              --head "$BRANCH" \
+              --title "chore(data): sync amc_theaters.json from AMC sitemaps" \
+              --body-file /tmp/theater-sync-summary.md
+          fi

@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+extension/node_modules/
+
+# Build and development output
+dist/
+build/
+extension/.output/
+extension/.wxt/
+extension/dist/
+
+# Vitest cache
+.vitest-cache/
+extension/node_modules/.vitest-cache/
+extension/canary_failed_snapshot.html
+
+# IDE and Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local maintainer notes
+CWS_SUBMISSION_GUIDE.md
