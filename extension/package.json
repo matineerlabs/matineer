@@ -13,7 +13,8 @@
     "compile": "tsc --noEmit",
     "test": "vitest run",
     "canary": "vitest run scripts/canary_check.ts",
-    "generate:theaters": "node scripts/generate_theaters_from_sitemaps.js"
+    "generate:theaters": "node scripts/generate_theaters_from_sitemaps.js",
+    "postinstall": "wxt prepare"
   },
   "keywords": [],
   "author": "",
