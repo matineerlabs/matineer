@@ -12,7 +12,7 @@
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
     "test": "vitest run",
-    "canary": "vitest run scripts/canary_check.ts",
+    "canary": "vitest run --config vitest.canary.config.ts",
     "generate:theaters": "node scripts/generate_theaters_from_sitemaps.js",
     "postinstall": "wxt prepare"
   },

@@ -1,7 +1,13 @@
 import { describe, it } from 'vitest';
+import { Window } from 'happy-dom';
 import { AmcHtmlParser } from '../src/shared/utils/parser';
 import * as fs from 'fs';
 import * as path from 'path';
+
+if (typeof globalThis.DOMParser === 'undefined') {
+  const win = new Window();
+  globalThis.DOMParser = win.DOMParser as unknown as typeof DOMParser;
+}
 
 interface FlagshipTheater {
   name: string;
