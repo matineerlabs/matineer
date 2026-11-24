@@ -488,7 +488,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <span>Integrations (MDBList API Key)</span>
               </div>
               <a
-                href="https://mdblist.com/preferences/"
+                href="https://mdblist.com/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center space-x-1 transition underline decoration-blue-500/40"

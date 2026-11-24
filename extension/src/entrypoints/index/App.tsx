@@ -427,6 +427,7 @@ const AppContent: React.FC = () => {
                     onCancelMetadata={handleCancelMetadata}
                     pinnedShowing={pinnedShowing}
                     onOpenTheaterModal={() => setIsTheaterModalOpen(true)}
+                    onOpenSettings={() => setIsSettingsModalOpen(true)}
                     onMovieStatusChange={handleMovieStatusChange}
                     onFormatToggle={handleFormatToggle}
                     onUserStatusChange={handleUserStatusChange}

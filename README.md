@@ -85,6 +85,7 @@ You can clear either cache anytime in Settings to force a fresh update.
 
 ---
 
+<a id="mdblist-setup"></a>
 ## Setting Up MDBList (Optional Ratings & Metadata)
 
 Matineer works out of the box for showtimes and scheduling. If you also want movie ratings and extra details (like genres and a movie description when you hover over a movie card), you can connect a free [MDBList](https://mdblist.com) account.

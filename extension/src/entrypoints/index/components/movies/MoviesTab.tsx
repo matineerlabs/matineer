@@ -1,11 +1,12 @@
 import { MovieDayStatus, UserMovieStatus } from '../../../../shared/types/movie';
 import { useClickOutside } from "../../hooks/useClickOutside";
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Ban, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, ExternalLink, Eye, EyeOff, Film, Loader2, MapPin, RotateCw, X } from "lucide-react";
+import { Ban, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, ExternalLink, Eye, EyeOff, Film, Loader2, MapPin, RotateCw, Sparkles, X } from "lucide-react";
 import { MetadataProgressState, Movie, PinnedShowing, ShowingItem } from "../../types/api";
 import { formatFriendlyDate } from "../../../../shared/utils/time";
 import { MovieCard } from "./MovieCard";
 import { useOptionalSettings } from "../../context/SettingsContext";
+import { getStorageItem, setStorageItem, STORAGE_KEYS } from "../../../../shared/utils/storage";
 
 interface MoviesTabProps {
   movies: Movie[];
@@ -19,6 +20,7 @@ interface MoviesTabProps {
   onCancelMetadata?: () => void;
   pinnedShowing?: PinnedShowing | null;
   onOpenTheaterModal?: () => void;
+  onOpenSettings?: () => void;
   onMovieStatusChange: (title: string, status: MovieDayStatus) => void;
   onFormatToggle: (title: string, fmt: string) => void;
   onUserStatusChange: (title: string, st: UserMovieStatus) => void;
@@ -125,6 +127,7 @@ export const MoviesTab: React.FC<MoviesTabProps> = ({
   onCancelMetadata,
   pinnedShowing = null,
   onOpenTheaterModal,
+  onOpenSettings,
   onMovieStatusChange,
   onFormatToggle,
   onUserStatusChange,
@@ -137,6 +140,32 @@ export const MoviesTab: React.FC<MoviesTabProps> = ({
 }) => {
   const settingsContext = useOptionalSettings();
   const rankNonAListLast = settingsContext?.settings?.rankNonAListLast ?? false;
+  const mdblistApiKey = settingsContext?.settings?.mdblistApiKey ?? "";
+  const showRatings = settingsContext?.settings?.showRatings ?? true;
+
+  // Start hidden until async storage check resolves to avoid flicker if dismissed
+  const [isMdblistPromptDismissed, setIsMdblistPromptDismissed] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    getStorageItem<boolean>(STORAGE_KEYS.MDBLIST_PROMPT_DISMISSED, false).then((dismissed) => {
+      if (active) setIsMdblistPromptDismissed(dismissed);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleDismissMdblistPrompt = () => {
+    setIsMdblistPromptDismissed(true);
+    setStorageItem(STORAGE_KEYS.MDBLIST_PROMPT_DISMISSED, true);
+  };
+
+  const showMdblistPrompt =
+    Boolean(settingsContext) &&
+    showRatings &&
+    !mdblistApiKey.trim() &&
+    !isMdblistPromptDismissed;
 
   const [inactiveExpanded, setInactiveExpanded] = useState(false);
   const [renderedProgress, setRenderedProgress] = useState(metadataProgress);
@@ -315,6 +344,60 @@ export const MoviesTab: React.FC<MoviesTabProps> = ({
 
   return (
     <div className={`space-y-4 ${shouldAnimate ? "animate-fade-in" : ""}`}>
+      {showMdblistPrompt && (
+        <div className="flex items-start justify-between gap-3 bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/50 text-blue-950 dark:text-blue-100 rounded-lg p-3 px-4 text-xs shadow-sm">
+          <div className="flex items-start gap-2.5 min-w-0 flex-1">
+            <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+            <div className="space-y-1.5 min-w-0">
+              <p className="font-semibold text-blue-950 dark:text-blue-100">
+                Recommended: Connect a free MDBList API key
+              </p>
+              <p className="text-blue-900/80 dark:text-blue-200/80 leading-relaxed">
+                Unlock Rotten Tomatoes critics &amp; audience scores, IMDb ratings, genres, and movie descriptions on every card.
+              </p>
+              <div className="flex items-center flex-wrap gap-2 pt-0.5">
+                {onOpenSettings && (
+                  <button
+                    type="button"
+                    onClick={onOpenSettings}
+                    className="px-2.5 py-1 rounded-md bg-brand-blue hover:bg-brand-blueHover text-brand-text font-semibold text-xs shadow-sm transition"
+                  >
+                    Open Settings
+                  </button>
+                )}
+                <a
+                  href="https://mdblist.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-1 rounded-md bg-white/80 dark:bg-dark-surface hover:bg-white dark:hover:bg-dark-hover border border-blue-200 dark:border-blue-800/60 text-blue-800 dark:text-blue-300 font-medium inline-flex items-center gap-1 transition"
+                >
+                  <span>Get Free API Key</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+                <a
+                  href="https://github.com/matineerlabs/matineer#mdblist-setup"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-700 dark:text-blue-300 hover:underline font-medium inline-flex items-center gap-1 px-1 py-1"
+                >
+                  <span>Setup Guide</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleDismissMdblistPrompt}
+            className="p-1 rounded hover:bg-blue-200/60 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 hover:text-blue-950 dark:hover:text-white transition flex-shrink-0"
+            title="Dismiss recommendation"
+            aria-label="Dismiss recommendation"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Summary Header */}
       <div className={`flex items-center justify-between flex-wrap gap-2.5 bg-dark-card border border-dark-border rounded-lg p-3 px-4 shadow-sm ${shouldAnimate ? "animate-fade-in" : ""}`}>
         <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-200 font-semibold flex-wrap gap-y-1">

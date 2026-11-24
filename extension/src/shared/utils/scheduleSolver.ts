@@ -546,7 +546,7 @@ export class ScheduleOptimizer {
                 type: 'break_resized',
                 description: `${brk.name} shortened to ${b_dur}m`,
                 target: brk.name,
-                note: `${diff}m shorter`,
+                note: 'shorter break',
               });
             } else if (brk.max_duration_min !== null && b_dur > brk.max_duration_min) {
               const diff = b_dur - brk.max_duration_min;
@@ -555,7 +555,7 @@ export class ScheduleOptimizer {
                 type: 'break_resized',
                 description: `${brk.name} extended to ${b_dur}m`,
                 target: brk.name,
-                note: `${diff}m longer`,
+                note: 'longer break',
               });
             }
 
