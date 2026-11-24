@@ -414,8 +414,9 @@ export class ScheduleOptimizer {
       for (const brk of available_breaks) {
         const effective_dur = brk.evaluateGap(gap_start, gap_end);
         if (effective_dur !== null) {
-          const b_start = Math.max(gap_start, brk.window_start_min);
-          const b_end = b_start + effective_dur;
+          // Fold any pre-window gap into the break so users never see a wait before a break.
+          const b_start = gap_start;
+          const b_end = Math.max(gap_start, brk.window_start_min) + effective_dur;
           matched_break = [brk, b_start, b_end];
           break;
         }
@@ -496,8 +497,9 @@ export class ScheduleOptimizer {
       for (const brk of available_breaks) {
         const effective_dur = brk.evaluateGap(gap_start, gap_end);
         if (effective_dur !== null) {
-          const b_start = Math.max(gap_start, brk.window_start_min);
-          const b_end = b_start + effective_dur;
+          // Fold any pre-window gap into the break so users never see a wait before a break.
+          const b_start = gap_start;
+          const b_end = Math.max(gap_start, brk.window_start_min) + effective_dur;
           const wait_after = gap_end - b_end;
           if (wait_after >= 0 && wait_after <= strictMaxWait) {
             return {
@@ -505,7 +507,7 @@ export class ScheduleOptimizer {
               matched_break: [brk, b_start, b_end],
               consumed_configured_break: brk,
               is_auto_break: false,
-              wasted_wait: wait_after + Math.max(0, b_start - gap_start),
+              wasted_wait: wait_after,
               net_wait: total_gap,
               penalty: 0,
               relaxations: [],
@@ -530,8 +532,9 @@ export class ScheduleOptimizer {
         const overlapDur = overlapEnd - overlapStart;
 
         if (overlapDur >= intentMinDur && total_gap >= intentMinDur) {
-          const b_dur = Math.min(overlapDur, intentMaxDur);
-          const b_start = overlapStart;
+          const preBreakGap = overlapStart - gap_start;
+          const b_dur = Math.min(overlapDur + preBreakGap, intentMaxDur);
+          const b_start = gap_start;
           const b_end = b_start + b_dur;
           const leftoverWait = total_gap - b_dur;
 
@@ -649,7 +652,10 @@ export class ScheduleOptimizer {
         const overlapDur = overlapEnd - overlapStart;
 
         if (overlapDur >= 30 && total_gap <= 110 + strictMaxWait) {
-          const b_dur = Math.min(overlapDur, 110);
+          const preBreakGap = overlapStart - gap_start;
+          const b_dur = Math.min(overlapDur + preBreakGap, 110);
+          const b_start = gap_start;
+          const b_end = b_start + b_dur;
           const leftoverWait = total_gap - b_dur;
           if (leftoverWait >= 0 && leftoverWait <= strictMaxWait) {
             const synthBreak = new ActivityBreak(
@@ -661,7 +667,7 @@ export class ScheduleOptimizer {
             );
             return {
               is_valid: true,
-              matched_break: [synthBreak, overlapStart, overlapStart + b_dur],
+              matched_break: [synthBreak, b_start, b_end],
               consumed_configured_break: null,
               is_auto_break: true,
               wasted_wait: leftoverWait,

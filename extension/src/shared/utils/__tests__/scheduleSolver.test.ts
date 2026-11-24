@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { ScheduleOptimizer, createMovieShowing, MovieShowing } from '../scheduleSolver';
 import { ActivityBreak, parseMarathonTime } from '../time';
+import { TimelineItemType } from '../../types/movie';
 
 function buildSampleShowings(): MovieShowing[] {
   const showings: MovieShowing[] = [];
@@ -336,5 +337,77 @@ describe('ScheduleOptimizer', () => {
       expect(results[1]!.is_relaxed).toBe(true);
       expect(results[1]!.relaxations[0]!.note).toBe('+10m over max wait');
     });
+  });
+
+  it('folds pre-break gaps into the break so there is never a wait before a break', () => {
+    // Movie A ends at 4:58pm (2:45pm + 25m trailers + 108m runtime), Movie B starts at 6:30pm.
+    // Dinner window starts at 5:00pm (2m after Movie A ends).
+    const showings = [
+      createMovieShowing({
+        title: 'Clayface',
+        format_name: 'Digital',
+        start_time_str: '2:45pm',
+        start_min: parseMarathonTime('2:45pm'),
+        runtime_min: 108,
+        trailer_min: 25,
+      }),
+      createMovieShowing({
+        title: 'Drummer Boy',
+        format_name: 'Digital',
+        start_time_str: '6:30pm',
+        start_min: parseMarathonTime('6:30pm'),
+        runtime_min: 129,
+        trailer_min: 25,
+      }),
+    ];
+
+    const dinner = new ActivityBreak(
+      'Dinner',
+      parseMarathonTime('5:00pm'),
+      parseMarathonTime('8:30pm'),
+      50,
+      95
+    );
+
+    const strictOptimizer = new ScheduleOptimizer({
+      showings,
+      num_movies: 2,
+      activity_breaks: [dinner],
+      min_consecutive_wait_min: 5,
+      max_consecutive_wait_min: 15,
+      require_all_breaks: true,
+    });
+
+    const strictSchedules = strictOptimizer.findSchedules();
+    expect(strictSchedules).toHaveLength(1);
+    const strictItems = strictSchedules[0]!.timeline_items;
+    expect(strictItems.map((i) => i.item_type)).toEqual([
+      TimelineItemType.MOVIE,
+      TimelineItemType.BREAK,
+      TimelineItemType.MOVIE,
+    ]);
+    expect(strictItems[1]!.start_min).toBe(parseMarathonTime('4:58pm'));
+    expect(strictItems[1]!.end_min).toBe(parseMarathonTime('6:30pm'));
+    expect(strictItems[1]!.duration_min).toBe(92);
+    expect(strictSchedules[0]!.total_wasted_wait_min).toBe(0);
+
+    // Also verify auto-added relaxed break folds the pre-window 2m into the break
+    const relaxedOptimizer = new ScheduleOptimizer({
+      showings,
+      num_movies: 2,
+      min_consecutive_wait_min: 5,
+      max_consecutive_wait_min: 15,
+    });
+    const relaxedSchedules = relaxedOptimizer.findSchedulesWithFallback(5, 3);
+    expect(relaxedSchedules).toHaveLength(1);
+    const relaxedItems = relaxedSchedules[0]!.timeline_items;
+    expect(relaxedItems.map((i) => i.item_type)).toEqual([
+      TimelineItemType.MOVIE,
+      TimelineItemType.BREAK,
+      TimelineItemType.MOVIE,
+    ]);
+    expect(relaxedItems[1]!.start_min).toBe(parseMarathonTime('4:58pm'));
+    expect(relaxedItems[1]!.duration_min).toBe(92);
+    expect(relaxedSchedules[0]!.total_wasted_wait_min).toBe(0);
   });
 });
