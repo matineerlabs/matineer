@@ -1,16 +1,13 @@
-<p align="center">
-  <img src="extension/public/icon/128-unbounded.png" alt="Matineer Logo" width="84" />
-</p>
+<h1 align="center">
+  <img src="extension/public/icon/128-unbounded.png" alt="Matineer Logo" width="60" align="absmiddle" />
+  Matineer: Movie Marathon Planner
+</h1>
 
-<h1 align="center">Matineer — Movie Marathon Planner</h1>
+Matineer is an open-source Chrome extension for planning multi-movie theater days around your schedule. Pick a theater and date, set your available hours, trailer time, wait times between movies, and optional meal or coffee breaks, and Matineer builds back-to-back movie schedules that fit.
 
-Matineer is an open-source Chrome extension that helps you plan multi-movie theater days around your schedule. Pick a theater and date, set your available hours, trailer time, wait times between movies, and optional meal or coffee breaks, and Matineer automatically builds back-to-back movie schedules that fit.
+Matineer currently supports AMC Theatres locations and works especially well with AMC A-List subscriptions.
 
-Matineer currently supports AMC Theatres locations and is designed to pair especially well with AMC A-List subscriptions.
-
-> **Disclaimer:** Matineer is an independent, fan-built open-source project. While it currently supports AMC Theatres showtimes, it is **not affiliated with, endorsed by, or connected to AMC Theatres, any other theater chain, movie studios, film distributors, ticketing platforms, or rating providers**. All movie titles, showtimes, and ratings belong to their respective owners.
-
----
+> Disclaimer: Matineer is an independent, fan-built open-source project. While it currently supports AMC Theatres showtimes, it is not affiliated with, endorsed by, or connected to AMC Theatres, any other theater chain, movie studios, film distributors, ticketing platforms, or rating providers. All movie titles, showtimes, and ratings belong to their respective owners.
 
 ## Contents
 
@@ -22,52 +19,46 @@ Matineer currently supports AMC Theatres locations and is designed to pair espec
 - [Development & Building from Source](#development--building-from-source)
 - [Privacy & License](#privacy--license)
 
----
-
 ## Features
 
-- **Automatic Schedule Builder** — Finds valid multi-movie combinations within your start and end times while factoring in trailers and how long you want to wait between movies.
-- **Flexible Activity Breaks** — Add meal, coffee, or rest breaks and let Matineer place them automatically between screenings.
-- **Must-See, Pinning & Watchlist Controls** — Mark films as Must-See (using any of your selected formats), pin a specific showtime, or hide movies you've already watched.
-- **500+ Theater Locations** — Search supported theaters, star your favorites, and switch locations anytime.
-- **Optional Movie Ratings** — Connect a free MDBList API key to show Rotten Tomatoes (Critics & Audience) and IMDb scores right on each movie card.
-- **Private & Local** — Your showtimes, preferences, watch history, and cached ratings stay right in your browser, with no accounts, ads, or tracking.
-
----
+- Automatically build multi-movie combinations within your start and end times, accounting for trailers and how long you want to wait between movies.
+- Add meal, coffee, or rest breaks and let Matineer place them in open gaps between screenings.
+- Mark films as Must-See (using any of your selected formats), pin a specific showtime, or hide movies you have already watched.
+- Search 500+ supported theater locations, star your favorites, and switch locations anytime.
+- Connect a free MDBList API key to show Rotten Tomatoes (Critics and Audience) and IMDb scores on each movie card.
+- Keep your showtimes, preferences, watch history, and cached ratings in your browser, with no accounts, ads, or tracking.
 
 ## Quick Start
 
-1. **Select a Theater & Date**:
-   Open Matineer from your browser toolbar, pick a theater (star your favorites for quick access), and choose a date to load showtimes.
-2. **Set Your Scheduling Rules**:
-   In the left sidebar under Scheduling Rules, choose your Time Window (earliest start and latest end), Trailer Allowance, and Min / Max Wait between movies.
-3. **Add Breaks (Optional)**:
-   Under Flexible Activity Breaks, add a break (such as a 45-minute dinner) if you want Matineer to automatically leave room between movies.
-4. **Pick Your Movies & Choose a Schedule**:
-   Use the Movies tab to mark favorites as Must-See, pin a specific showtime, or exclude movies you don't want to see. Then switch to Schedules to compare your options.
+Install the extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/jcbibnficgmeajiianncahokknlmojpg?utm_source=item-share-cb) (or see [Development & Building from Source](#development--building-from-source) if you prefer to build it yourself).
 
----
+1. Open Matineer from your browser toolbar, pick a theater, and choose a date to load showtimes.
+2. Set your Time Window, Trailer Allowance, and Min / Max Wait under Scheduling Rules.
+3. Optionally add breaks under Flexible Activity Breaks.
+4. Use the Movies tab to mark Must-See films, pin showtimes, or exclude movies, then switch to Schedules to compare options.
+5. (Optional, recommended) Add a free MDBList API key in Settings to display Rotten Tomatoes and IMDb ratings, genres, and movie descriptions. See [Setting Up MDBList](#setting-up-mdblist-optional-ratings--metadata).
 
 ## User Guide
 
 ### Scheduling Rules
 
-- **Time Window (Earliest Start / Latest End):** Keeps your marathon within the hours you want to be at the theater. Late-night showings that run past midnight are supported too.
-- **Trailer Allowance:** Accounts for pre-show trailers so your wait time between movies reflects when the feature actually ends and when you need to be in your seat for the next one.
-- **Min / Max Wait Between Movies:** Controls how tight or relaxed your schedule feels. Allowing a longer Max Wait or shorter Min Wait will usually give you more schedule choices.
+- Time Window (Earliest Start / Latest End) keeps your marathon within the hours you want to be at the theater. Late-night showings that run past midnight are supported too.
+- Trailer Allowance accounts for pre-show trailers so your wait time between movies reflects when the feature actually ends and when you need to be in your seat for the next one.
+- Min / Max Wait Between Movies controls how tight or relaxed your schedule feels. Allowing a longer Max Wait or shorter Min Wait will usually give you more schedule choices.
 
 ### Flexible Activity Breaks
 
-- Add one or more breaks (such as lunch, dinner, or an intermission) with a duration and an optional time window.
-- Matineer places each break into an open gap between movies that fits your rules.
+- Add Lunch, Dinner, Intermission, or Quick Breather breaks and pick a duration for each.
+- Lunch (11:00 AM to 2:30 PM) and Dinner (5:00 PM to 8:30 PM) are placed within mealtime hours, while Intermission and Quick Breather can fit into any open gap between movies.
 
 ### Movies Tab: Must-See, Pinning & Watchlist Status
 
-- **Must-See vs. Pinning a Showtime:**
-  - **Must-See:** Tells Matineer that the movie must appear in every generated schedule, choosing from whichever selected formats (e.g., Standard, IMAX, Dolby) you've enabled for that movie.
-  - **Pinning a Showtime:** Locks in one exact showtime for that movie so every generated schedule will be built around that specific screening.
-- **Exclude / Watched / Won't Watch:** Keep movies you've already seen or aren't interested in out of your schedules.
-- **Formats & Showtime List:** Toggle which formats you're open to seeing and expand any movie to view all of its showtimes for the day.
+- Must-See tells Matineer that a movie must appear in every generated schedule, choosing from whichever selected formats (such as Standard, IMAX, or Dolby) you enabled for that movie.
+- Pinning a Showtime locks in one exact showtime so every generated schedule is built around that specific screening.
+- Exclude leaves a movie out of generated schedules for your current plan without hiding it from the list.
+- Watched and Won't Watch mark a movie as inactive and move it to the collapsible section at the bottom of the Movies tab, where you can view or restore it anytime.
+- Format toggles let you choose which formats (such as Standard, IMAX, or Dolby) you are open to seeing for each movie.
+- Expand any movie card to view its full showtime list for the day.
 
 ### Settings & Caching
 
@@ -76,14 +67,9 @@ Click the Settings (gear) icon to:
 - Add or update your MDBList API Key.
 - Clear cached data or reset your local watch history.
 
-#### How long is data cached?
-To keep things fast and avoid unnecessary repeat requests:
-- **Showtimes:** Cached locally for 1 hour.
-- **Movie ratings & metadata:** Cached locally for 24 hours.
+#### How Long Is Data Cached?
 
-You can clear either cache anytime in Settings to force a fresh update.
-
----
+Showtimes are cached locally for 1 hour, and movie ratings and metadata are cached locally for 24 hours. You can clear either cache anytime in Settings to force a fresh update.
 
 <a id="mdblist-setup"></a>
 ## Setting Up MDBList (Optional Ratings & Metadata)
@@ -91,13 +77,8 @@ You can clear either cache anytime in Settings to force a fresh update.
 Matineer works out of the box for showtimes and scheduling. If you also want movie ratings and extra details (like genres and a movie description when you hover over a movie card), you can connect a free [MDBList](https://mdblist.com) account.
 
 ### What Is Displayed
-Once your MDBList API key is saved, Matineer displays:
-- **Rotten Tomatoes Critics Score** (on the movie card)
-- **Rotten Tomatoes Audience Score** (on the movie card)
-- **IMDb Rating** (on the movie card)
-- **Genres & Movie Description** (shown in the pop-up card when you hover over a movie)
 
-Clicking the ratings badge on a movie card opens Rotten Tomatoes search or the IMDb page for that movie.
+Once your MDBList API key is saved, Matineer shows Rotten Tomatoes Critics and Audience scores and the IMDb rating on each movie card, plus genres and a movie description in the pop-up card when you hover over a movie. Clicking the ratings badge on a movie card opens Rotten Tomatoes search or the IMDb page for that movie.
 
 ### How to Get & Add Your API Key
 
@@ -106,9 +87,7 @@ Clicking the ratings badge on a movie card opens Rotten Tomatoes search or the I
 3. In Matineer, click the Settings (gear) icon.
 4. Paste your key into the MDBList API Key box and click Save. Matineer checks that your key works before saving and stores fetched ratings locally for 24 hours.
 
-> **Note on Matching:** Matineer matches theater listings to MDBList using title and year clues. Occasionally a movie's score may be missing or matched to the wrong title—most often for re-releases, special events, or alternate titles.
-
----
+> Note on matching: Matineer matches theater listings to MDBList using title and year clues. Occasionally a movie's score may be missing or matched to the wrong title, most often for re-releases, special events, or alternate titles.
 
 ## Troubleshooting & FAQ
 
@@ -129,7 +108,7 @@ Try widening your Time Window, increasing Max Wait, or unpinning a showtime to s
 <summary><strong>Why did loading showtimes fail or get blocked?</strong></summary>
 
 Theater websites sometimes show a temporary security check when pages are requested in the background. If loading fails:
-1. Open the theater's showtimes page directly in a normal browser tab so the page loads normally.
+1. Open the theater's showtimes page in a regular browser tab and wait for it to load.
 2. Return to Matineer and try loading the date again.
 
 </details>
@@ -144,11 +123,9 @@ Ratings are matched automatically using movie title and year clues, so special e
 <details>
 <summary><strong>How do I refresh showtimes or ratings right away?</strong></summary>
 
-Open Settings (gear icon) and clear the showtimes cache (normally refreshed every 1 hour) or the metadata cache (normally refreshed every 24 hours).
+Open Settings (gear icon) and clear the Showtimes Cache or Ratings Cache. See [How Long Is Data Cached?](#how-long-is-data-cached) for default refresh intervals.
 
 </details>
-
----
 
 ## Development & Building from Source
 
@@ -178,9 +155,8 @@ npm install
 2. Open `chrome://extensions` and enable Developer mode.
 3. Click Load unpacked and select `extension/.output/chrome-mv3/`.
 
----
-
 ## Privacy & License
 
-- **Privacy Policy:** See [PRIVACY_POLICY.md](PRIVACY_POLICY.md). Matineer stores all data locally in your browser and only contacts `amctheatres.com` (for theater showtimes) and `mdblist.com` (if you choose to add an MDBList API key).
-- **Open Source:** Source code is hosted at [matineerlabs/matineer](https://github.com/matineerlabs/matineer).
+Matineer stores all data locally in your browser and only contacts `amctheatres.com` (for theater showtimes) and `mdblist.com` (if you choose to add an MDBList API key). See [PRIVACY_POLICY.md](PRIVACY_POLICY.md) for the full privacy policy.
+
+The source code is hosted at [matineerlabs/matineer](https://github.com/matineerlabs/matineer).
