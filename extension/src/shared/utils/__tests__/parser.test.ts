@@ -100,4 +100,46 @@ describe('AmcHtmlParser', () => {
     expect(sa?.runtime_str).toBe('2h12m');
     expect(sa?.runtime_min).toBe(132);
   });
+
+  it('extracts and normalizes unhyphenated PG13 ratings from standalone tags and inline runtime delimiters', () => {
+    const testHtml = `
+      <html><body>
+        <section>
+          <h2><a href="/movies/movie-one">Movie One</a></h2>
+          <ul>
+            <li><span>1 HR 58 MIN</span></li>
+            <li><span>PG13</span></li>
+          </ul>
+          <li role="listitem" aria-label="Digital Showtimes">
+            <h3><span>Digital</span></h3>
+            <a href="/showtimes/201" aria-label="1:00 PM">1:00pm</a>
+          </li>
+        </section>
+        <section>
+          <h2><a href="/movies/movie-two">Movie Two</a></h2>
+          <p>2 HR 5 MIN · PG13</p>
+          <li role="listitem" aria-label="Digital Showtimes">
+            <h3><span>Digital</span></h3>
+            <a href="/showtimes/202" aria-label="4:00 PM">4:00pm</a>
+          </li>
+        </section>
+        <section>
+          <h2><a href="/movies/movie-three">Movie Three</a></h2>
+          <span>Rated PG 13</span>
+          <span>1 HR 45 MIN</span>
+          <li role="listitem" aria-label="Digital Showtimes">
+            <h3><span>Digital</span></h3>
+            <a href="/showtimes/203" aria-label="7:00 PM">7:00pm</a>
+          </li>
+        </section>
+      </body></html>
+    `;
+
+    const parser = new AmcHtmlParser();
+    const movies = parser.parse(testHtml);
+
+    expect(movies.find(m => m.title === 'Movie One')?.rated).toBe('PG-13');
+    expect(movies.find(m => m.title === 'Movie Two')?.rated).toBe('PG-13');
+    expect(movies.find(m => m.title === 'Movie Three')?.rated).toBe('PG-13');
+  });
 });

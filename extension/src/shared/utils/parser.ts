@@ -1,5 +1,5 @@
 import { MovieResponse, ShowingItemResponse } from '../types/schemas';
-import { normalizeMovieKey } from './movie';
+import { MPA_RATING_TOKEN_PATTERN, normalizeMovieKey, normalizeMpaRating } from './movie';
 import { parseRuntimeStr } from './time';
 
 const TIME_PATTERN = /\b(\d{1,2}:\d{2})\s*([ap]\.?m\.?)?\b/i;
@@ -131,20 +131,30 @@ export class AmcHtmlParser {
   }
 
   private _extractMpaaRating(card: Element): string | null {
+    const exactRe = new RegExp(`^(?:${MPA_RATING_TOKEN_PATTERN})$`, 'i');
+    const ratedRe = new RegExp(`\\bRated\\s+(${MPA_RATING_TOKEN_PATTERN})\\b`, 'i');
+    const beforeRuntimeRe = new RegExp(
+      `\\b(${MPA_RATING_TOKEN_PATTERN})\\b\\s*[·\\|\\•]\\s*\\d+\\s*(?:HR|MIN)`,
+      'i'
+    );
+    const afterRuntimeRe = new RegExp(
+      `\\d+\\s*(?:HR|MIN)\\s*[·\\|\\•]\\s*\\b(${MPA_RATING_TOKEN_PATTERN})\\b`,
+      'i'
+    );
+
     const tags = card.querySelectorAll('span, div, p, li');
     for (const tag of tags) {
       const txt = (tag.textContent || '').trim();
-      if (/^(PG-13|NC-17|PG|G|R|NR)$/i.test(txt)) return txt.toUpperCase();
-      const m = txt.match(/\bRated\s+(PG-13|NC-17|PG|G|R|NR)\b/i);
-      if (m && m[1]) return m[1].toUpperCase();
+      if (exactRe.test(txt)) return normalizeMpaRating(txt);
+      const m = txt.match(ratedRe);
+      if (m?.[1]) return normalizeMpaRating(m[1]);
     }
 
     const cardText = card.textContent || '';
-    let m = cardText.match(/\b(PG-13|NC-17|PG|G|R|NR)\b\s*[·\|\•]\s*\d+\s*(?:HR|MIN)/i);
-    if (m && m[1]) return m[1].toUpperCase();
-
-    m = cardText.match(/\d+\s*(?:HR|MIN)\s*[·\|\•]\s*\b(PG-13|NC-17|PG|G|R|NR)\b/i);
-    if (m && m[1]) return m[1].toUpperCase();
+    for (const pattern of [beforeRuntimeRe, afterRuntimeRe]) {
+      const m = cardText.match(pattern);
+      if (m?.[1]) return normalizeMpaRating(m[1]);
+    }
 
     return null;
   }

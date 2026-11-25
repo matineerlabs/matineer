@@ -5,7 +5,16 @@ export {
   formatComparator,
 } from '../types/formats';
 
+export const MPA_RATING_TOKEN_PATTERN = 'PG[-\\s]*13|NC[-\\s]*17|PG|G|R|NR|UR';
+
 const VALID_MPA_RATINGS = new Set(['G', 'PG', 'PG-13', 'R', 'NC-17', 'NR']);
+
+function canonicalizeMpaToken(token: string): string {
+  if (/^PG[-\s]*13$/.test(token)) return 'PG-13';
+  if (/^NC[-\s]*17$/.test(token)) return 'NC-17';
+  if (token === 'UR') return 'NR';
+  return token;
+}
 
 export function normalizeMpaRating(rawRating: string | null | undefined): string | null {
   if (!rawRating) return null;
@@ -21,10 +30,12 @@ export function normalizeMpaRating(rawRating: string | null | undefined): string
   }
 
   // Check if string contains a standard MPA rating prefix/token
-  // e.g. "Rated PG-13", "US:PG-13", "MPA: R", "PG-13 (for thematic content)"
-  const m = trimmed.match(/\b(?:RATED|US|MPAA?|CERTIFICATION)?[:\s-]*(PG-13|NC-17|PG|G|R|NR|UR)\b/);
+  // e.g. "PG13", "PG 13", "Rated PG-13", "US:PG-13", "MPA: R", "PG-13 (for thematic content)"
+  const m = trimmed.match(
+    new RegExp(`\\b(?:RATED|US|MPAA?|CERTIFICATION)?[:\\s-]*(${MPA_RATING_TOKEN_PATTERN})\\b`)
+  );
   if (m && m[1]) {
-    return m[1] === 'UR' ? 'NR' : m[1];
+    return canonicalizeMpaToken(m[1]);
   }
 
   // Reject all non-MPA / international / TV ratings (e.g. "MA 15+", "13+", "M", "ALL", "12A", "18", "TV-MA", "TV-14")

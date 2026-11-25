@@ -7,8 +7,12 @@ describe('normalizeMpaRating', () => {
     expect(normalizeMpaRating('PG')).toBe('PG');
     expect(normalizeMpaRating('PG-13')).toBe('PG-13');
     expect(normalizeMpaRating('pg-13')).toBe('PG-13');
+    expect(normalizeMpaRating('PG13')).toBe('PG-13');
+    expect(normalizeMpaRating('pg13')).toBe('PG-13');
+    expect(normalizeMpaRating('PG 13')).toBe('PG-13');
     expect(normalizeMpaRating('R')).toBe('R');
     expect(normalizeMpaRating('NC-17')).toBe('NC-17');
+    expect(normalizeMpaRating('NC17')).toBe('NC-17');
     expect(normalizeMpaRating('NR')).toBe('NR');
   });
 
@@ -19,6 +23,9 @@ describe('normalizeMpaRating', () => {
 
   it('extracts embedded MPA ratings', () => {
     expect(normalizeMpaRating('Rated PG-13')).toBe('PG-13');
+    expect(normalizeMpaRating('Rated PG13')).toBe('PG-13');
+    expect(normalizeMpaRating('US:PG13')).toBe('PG-13');
+    expect(normalizeMpaRating('PG13 (for thematic content)')).toBe('PG-13');
     expect(normalizeMpaRating('US: R')).toBe('R');
     expect(normalizeMpaRating('MPA: PG')).toBe('PG');
   });
