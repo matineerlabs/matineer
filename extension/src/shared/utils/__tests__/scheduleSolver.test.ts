@@ -337,6 +337,83 @@ describe('ScheduleOptimizer', () => {
       expect(results[1]!.is_relaxed).toBe(true);
       expect(results[1]!.relaxations[0]!.note).toBe('+10m over max wait');
     });
+
+    it('prefers deeper trailer overlap (lower net_wait_min) over earlier end_min when relaxed penalties and wasted wait tie', () => {
+      // Mirrors:
+      // #1: Club Kid (1:15pm -> 3:42pm) -> Hunger Games (3:40pm -> 6:43pm, -2m overlap) -> Dinner (6:43-7:15, 32m) -> Hexed (7:15pm -> 9:29pm)
+      // #2: Hexed (1:45pm -> 3:59pm) -> Hunger Games (3:40pm -> 6:43pm, -19m overlap) -> Dinner (6:43-7:15, 32m) -> Club Kid (7:15pm -> 9:42pm)
+      const showings = [
+        createMovieShowing({
+          title: 'Club Kid',
+          format_name: 'Laser at AMC',
+          start_time_str: '1:15pm',
+          start_min: parseMarathonTime('1:15pm'),
+          runtime_min: 122,
+          trailer_min: 25,
+        }),
+        createMovieShowing({
+          title: 'Club Kid',
+          format_name: 'Laser at AMC',
+          start_time_str: '7:15pm',
+          start_min: parseMarathonTime('7:15pm'),
+          runtime_min: 122,
+          trailer_min: 25,
+        }),
+        createMovieShowing({
+          title: "Disney's Hexed",
+          format_name: 'Laser at AMC',
+          start_time_str: '1:45pm',
+          start_min: parseMarathonTime('1:45pm'),
+          runtime_min: 109,
+          trailer_min: 25,
+        }),
+        createMovieShowing({
+          title: "Disney's Hexed",
+          format_name: 'Laser at AMC',
+          start_time_str: '7:15pm',
+          start_min: parseMarathonTime('7:15pm'),
+          runtime_min: 109,
+          trailer_min: 25,
+        }),
+        createMovieShowing({
+          title: 'The Hunger Games: Sunrise on the Reaping',
+          format_name: 'Laser at AMC',
+          start_time_str: '3:40pm',
+          start_min: parseMarathonTime('3:40pm'),
+          runtime_min: 158,
+          trailer_min: 25,
+        }),
+      ];
+
+      const dinner = new ActivityBreak(
+        'Dinner',
+        parseMarathonTime('5:00pm'),
+        parseMarathonTime('8:30pm'),
+        45,
+        90
+      );
+
+      const optimizer = new ScheduleOptimizer({
+        showings,
+        num_movies: 3,
+        activity_breaks: [dinner],
+        min_consecutive_wait_min: -20,
+        max_consecutive_wait_min: 15,
+        require_all_breaks: true,
+      });
+
+      expect(optimizer.findSchedules()).toHaveLength(0);
+
+      const results = optimizer.findSchedulesWithFallback(20, 5);
+      expect(results).toHaveLength(2);
+      expect(results[0]!.penalty_score).toBe(results[1]!.penalty_score);
+      expect(results[0]!.total_wasted_wait_min).toBe(0);
+      expect(results[1]!.total_wasted_wait_min).toBe(0);
+      expect(results[0]!.showings[0]!.title).toBe("Disney's Hexed");
+      expect(results[0]!.net_wait_min).toBeLessThan(results[1]!.net_wait_min);
+      expect(results[0]!.end_time_str).toBe('9:42pm');
+      expect(results[1]!.end_time_str).toBe('9:29pm');
+    });
   });
 
   it('folds pre-break gaps into the break so there is never a wait before a break', () => {

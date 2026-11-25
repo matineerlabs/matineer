@@ -1135,6 +1135,9 @@ export class ScheduleOptimizer {
       if (a.total_wasted_wait_min !== b.total_wasted_wait_min) {
         return a.total_wasted_wait_min - b.total_wasted_wait_min;
       }
+      if (a.net_wait_min !== b.net_wait_min) {
+        return a.net_wait_min - b.net_wait_min;
+      }
       return a.end_min - b.end_min;
     });
 
