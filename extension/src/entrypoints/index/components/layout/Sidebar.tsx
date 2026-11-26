@@ -20,6 +20,7 @@ export interface SidebarProps {
 
   dates?: DateOption[];
   selectedDate: string;
+  todayStr?: string;
   onSelectDate: (d: string) => void;
   isScraping: boolean;
 }
@@ -36,6 +37,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenSettings,
   dates,
   selectedDate,
+  todayStr,
   onSelectDate,
   isScraping,
 }) => {
@@ -75,6 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <DateSelector
         dates={dates}
         selectedDate={selectedDate}
+        todayStr={todayStr}
         selectedTheaterId={selectedTheaterId}
         onSelectDate={onSelectDate}
         isScraping={isScraping}

@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useClickOutside } from "../../hooks/useClickOutside";
+import { formatLocalDateStr } from "../../../../shared/utils/time";
 
 interface DatePickerModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedDate: string; // "YYYY-MM-DD"
+  todayStr?: string; // "YYYY-MM-DD"
   onSelectDate: (dateStr: string) => void;
 }
 
@@ -13,15 +15,15 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
   isOpen,
   onClose,
   selectedDate,
+  todayStr: todayStrProp,
   onSelectDate,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Today in local timezone formatted as YYYY-MM-DD
-  const today = new Date();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(
-    today.getDate()
-  ).padStart(2, "0")}`;
+  const todayStr = todayStrProp || formatLocalDateStr();
+  const [todayY, todayM, todayD] = todayStr.split("-").map(Number);
+  const today = todayY && todayM && todayD ? new Date(todayY, todayM - 1, todayD) : new Date();
 
   // Current view year & month (0-indexed)
   const initialYear = selectedDate ? parseInt(selectedDate.split("-")[0] ?? "", 10) || today.getFullYear() : today.getFullYear();

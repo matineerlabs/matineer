@@ -9,7 +9,7 @@ import { AboutModal } from "./components/common/AboutModal";
 import { MoviesTab } from "./components/movies/MoviesTab";
 import { SchedulesTab } from "./components/schedules/SchedulesTab";
 import { Theater } from "./types/api";
-import { useShowtimes, useMoviePreferences, useScheduleSolver } from "./hooks";
+import { useShowtimes, useMoviePreferences, useScheduleSolver, useCurrentDate } from "./hooks";
 import { MarathonConfigProvider } from "./context/MarathonConfigContext";
 import { SettingsProvider, useSettings } from "./context/SettingsContext";
 import { UserMovieStatus, MovieDayStatus } from "../../shared/types/movie";
@@ -30,6 +30,7 @@ const AppContent: React.FC = () => {
   const [isTheaterModalOpen, setIsTheaterModalOpen] = useState<boolean>(false);
   const [favoriteTheaterIds, setFavoriteTheaterIds] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>("");
+  const todayStr = useCurrentDate();
 
   // Settings modal & MDBList API Key
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
@@ -146,6 +147,14 @@ const AppContent: React.FC = () => {
     };
   }, [theaterId, selectedDate]);
 
+  // If the calendar day rolls over past the currently selected date, advance to today
+  useEffect(() => {
+    if (selectedDate && selectedDate < todayStr) {
+      setSelectedDate(todayStr);
+      handleUnpinShowing();
+    }
+  }, [todayStr, selectedDate, handleUnpinShowing]);
+
   const handleTriggerUpdate = async () => {
     setIsUpdatingExtension(true);
     setUpdateFeedback("");
@@ -254,6 +263,7 @@ const AppContent: React.FC = () => {
             onCloseTheaterModal={() => setIsTheaterModalOpen(false)}
             onOpenSettings={() => setIsSettingsModalOpen(true)}
             selectedDate={selectedDate}
+            todayStr={todayStr}
             onSelectDate={handleSelectDate}
             isScraping={isScraping}
           />

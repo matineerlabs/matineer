@@ -2,11 +2,12 @@ import React, { useState, useMemo } from "react";
 import { Calendar } from "lucide-react";
 import { DateOption } from "../../../types/api";
 import { DatePickerModal } from "../../common/DatePickerModal";
-import { getAvailableDates } from "../../../../../shared/utils/time";
+import { getAvailableDates, formatLocalDateStr } from "../../../../../shared/utils/time";
 
 export interface DateSelectorProps {
   dates?: DateOption[];
   selectedDate: string;
+  todayStr?: string;
   selectedTheaterId: string;
   onSelectDate: (d: string) => void;
   isScraping: boolean;
@@ -15,13 +16,20 @@ export interface DateSelectorProps {
 export const DateSelector: React.FC<DateSelectorProps> = ({
   dates,
   selectedDate,
+  todayStr,
   selectedTheaterId,
   onSelectDate,
   isScraping,
 }) => {
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
-  const availableDates = useMemo(() => dates || getAvailableDates(), [dates]);
+  const activeTodayStr = todayStr || formatLocalDateStr();
+  const availableDates = useMemo(() => {
+    if (dates) return dates;
+    const [y, m, d] = activeTodayStr.split("-").map(Number);
+    const baseDate = y && m && d ? new Date(y, m - 1, d) : new Date();
+    return getAvailableDates(8, baseDate);
+  }, [dates, activeTodayStr]);
   const quickPills = availableDates.slice(0, 8);
   const quickPillMatch = quickPills.find((d) => d.date_str === selectedDate);
   const isCustomDateSelected = Boolean(selectedDate && !quickPillMatch);
@@ -131,6 +139,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
         isOpen={isDatePickerOpen}
         onClose={() => setIsDatePickerOpen(false)}
         selectedDate={selectedDate}
+        todayStr={activeTodayStr}
         onSelectDate={onSelectDate}
       />
     </section>

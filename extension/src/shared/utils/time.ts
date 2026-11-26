@@ -78,26 +78,30 @@ export function formatFriendlyDate(dateStr: string): string {
 }
 
 /**
+ * Formats a Date object as YYYY-MM-DD in the local timezone.
+ */
+export function formatLocalDateStr(date: Date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * Generates rolling available date options for the UI date picker.
  */
-export function getAvailableDates(numDays: number = 8): DateOptionResponse[] {
-  const today = new Date();
+export function getAvailableDates(numDays: number = 8, baseDate: Date = new Date()): DateOptionResponse[] {
   const dates: DateOptionResponse[] = [];
   for (let i = 0; i < numDays; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
+    const d = new Date(baseDate);
+    d.setDate(baseDate.getDate() + i);
     const isToday = i === 0;
     const displayLabel = isToday
       ? 'Today'
       : d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
 
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
-
     dates.push({
-      date_str: dateStr,
+      date_str: formatLocalDateStr(d),
       display_label: displayLabel,
     });
   }
