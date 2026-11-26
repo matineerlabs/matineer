@@ -182,14 +182,32 @@ export default defineBackground(() => {
     return true;
   });
 
-  // Open the standalone index.html app when the extension icon is clicked
+  // Open or focus the standalone index.html app when the extension icon is clicked
   chrome.action.onClicked.addListener(async () => {
     const appUrl = chrome.runtime.getURL('index.html');
-    const tabs = await chrome.tabs.query({ url: appUrl });
-    if (tabs.length > 0 && tabs[0]?.id) {
-      chrome.tabs.update(tabs[0].id, { active: true });
-    } else {
-      chrome.tabs.create({ url: appUrl });
+    const tabs = await chrome.tabs.query({ url: `${appUrl}*` });
+
+    if (tabs.length > 0) {
+      let targetTab = tabs[0];
+      try {
+        const currentWindow = await chrome.windows.getLastFocused();
+        const sameWindowTab = tabs.find((t) => t.windowId === currentWindow.id);
+        if (sameWindowTab) {
+          targetTab = sameWindowTab;
+        }
+      } catch {
+        // Fall back to tabs[0] if no focused window is available
+      }
+
+      if (targetTab?.id !== undefined) {
+        await chrome.tabs.update(targetTab.id, { active: true });
+        if (targetTab.windowId !== undefined) {
+          await chrome.windows.update(targetTab.windowId, { focused: true });
+        }
+        return;
+      }
     }
+
+    await chrome.tabs.create({ url: appUrl });
   });
 });
