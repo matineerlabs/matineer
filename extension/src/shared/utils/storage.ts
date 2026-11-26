@@ -10,6 +10,7 @@ export const STORAGE_KEYS = {
   FAVORITE_THEATERS: "matineer_favorite_theaters",
   MDBLIST_API_KEY: "matineer_settings_mdblist_api_key",
   MDBLIST_PROMPT_DISMISSED: "matineer_mdblist_prompt_dismissed",
+  QUICK_START_SEEN: "matineer_quick_start_seen",
 
   // Settings keys with matineer_settings_ prefix
   SETTINGS_EARLIEST_START: "matineer_settings_default_earliest_start",

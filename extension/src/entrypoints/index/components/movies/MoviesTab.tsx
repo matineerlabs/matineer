@@ -5,6 +5,7 @@ import { Ban, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, External
 import { MetadataProgressState, Movie, PinnedShowing, ShowingItem } from "../../types/api";
 import { formatFriendlyDate } from "../../../../shared/utils/time";
 import { MovieCard } from "./MovieCard";
+import { QuickStartCard } from "../common/QuickStartGuide";
 import { useOptionalSettings } from "../../context/SettingsContext";
 import { getStorageItem, setStorageItem, STORAGE_KEYS } from "../../../../shared/utils/storage";
 
@@ -30,6 +31,8 @@ interface MoviesTabProps {
   onIncludeAll: () => void;
   onExcludeAll: () => void;
   onRefreshShowtimes?: () => void;
+  showQuickStart?: boolean;
+  onDismissQuickStart?: () => void;
 }
 
 const MovieCardSkeleton: React.FC = () => (
@@ -137,6 +140,8 @@ export const MoviesTab: React.FC<MoviesTabProps> = ({
   onIncludeAll,
   onExcludeAll,
   onRefreshShowtimes,
+  showQuickStart = false,
+  onDismissQuickStart,
 }) => {
   const settingsContext = useOptionalSettings();
   const rankNonAListLast = settingsContext?.settings?.rankNonAListLast ?? false;
@@ -321,6 +326,9 @@ export const MoviesTab: React.FC<MoviesTabProps> = ({
   }
 
   if (!selectedDate) {
+    if (showQuickStart) {
+      return <QuickStartCard onDismiss={onDismissQuickStart} />;
+    }
     return (
       <div className="bg-dark-card border border-dark-border rounded-lg p-16 text-center space-y-3.5 my-4 shadow-sm">
         <Calendar className="w-12 h-12 text-brand-blue mx-auto opacity-70" />

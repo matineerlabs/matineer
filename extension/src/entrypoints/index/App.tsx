@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { AlertTriangle, Download, Film, ListOrdered, Loader2, Settings, Info, Moon, Sun, X } from "lucide-react";
+import { AlertTriangle, Download, Film, HelpCircle, ListOrdered, Loader2, Settings, Info, Moon, Sun, X } from "lucide-react";
 import { fetchTheaters, fetchRemoteStatus, triggerExtensionUpdate } from "./api/client";
 import type { RemoteStatusResponse } from "../../shared/types/schemas";
 import { HeaderBanner } from "./components/layout/HeaderBanner";
 import { Sidebar } from "./components/layout/Sidebar";
 import { SettingsModal } from "./components/common/SettingsModal";
 import { AboutModal } from "./components/common/AboutModal";
+import { QuickStartModal } from "./components/common/QuickStartGuide";
 import { MoviesTab } from "./components/movies/MoviesTab";
 import { SchedulesTab } from "./components/schedules/SchedulesTab";
 import { Theater } from "./types/api";
@@ -35,6 +36,8 @@ const AppContent: React.FC = () => {
   // Settings modal & MDBList API Key
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState<boolean>(false);
+  const [isQuickStartModalOpen, setIsQuickStartModalOpen] = useState<boolean>(false);
+  const [showQuickStart, setShowQuickStart] = useState<boolean>(false);
 
   // Remote status & version gate
   const [remoteStatus, setRemoteStatus] = useState<RemoteStatusResponse | null>(null);
@@ -99,16 +102,19 @@ const AppContent: React.FC = () => {
     Promise.all([
       getStorageItem<string>(STORAGE_KEYS.THEATER_ID, ""),
       getStorageItem<string[]>(STORAGE_KEYS.FAVORITE_THEATERS, []),
+      getStorageItem<boolean>(STORAGE_KEYS.QUICK_START_SEEN, false),
       fetchTheaters(),
-    ]).then(([savedTheaterId, savedFavorites, th]) => {
+    ]).then(([savedTheaterId, savedFavorites, quickStartSeen, th]) => {
       setTheaters(th);
       setFavoriteTheaterIds(savedFavorites);
 
       if (savedTheaterId && th.some((t) => t.id === savedTheaterId)) {
         setTheaterId(savedTheaterId);
         setIsTheaterModalOpen(false);
+        setShowQuickStart(false);
       } else {
         setIsTheaterModalOpen(true);
+        setShowQuickStart(!quickStartSeen);
       }
     });
   }, []);
@@ -226,12 +232,20 @@ const AppContent: React.FC = () => {
     );
   };
 
+  const dismissQuickStart = () => {
+    setShowQuickStart(false);
+    setStorageItem(STORAGE_KEYS.QUICK_START_SEEN, true).catch(() => {});
+  };
+
   const handleSelectDate = (dateStr: string) => {
     if (isScraping) return;
     setSelectedDate(dateStr);
     handleUnpinShowing();
     if (dateStr) {
       setActiveTab("movies");
+      if (showQuickStart) {
+        dismissQuickStart();
+      }
     }
   };
 
@@ -353,6 +367,17 @@ const AppContent: React.FC = () => {
 
                     <button
                       type="button"
+                      onClick={() => setIsQuickStartModalOpen(true)}
+                      className="py-1 px-2 rounded-lg hover:bg-dark-surface hover:text-gray-100 flex items-center gap-1.5 transition group"
+                    >
+                      <HelpCircle className="w-3.5 h-3.5 text-gray-400 group-hover:text-blue-400 transition" />
+                      <span className="text-xs">Guide</span>
+                    </button>
+
+                    <div className="w-px h-3.5 bg-dark-border/80" />
+
+                    <button
+                      type="button"
                       onClick={() => setIsAboutModalOpen(true)}
                       className="py-1 px-2 rounded-lg hover:bg-dark-surface hover:text-gray-100 flex items-center gap-1.5 transition group"
                     >
@@ -446,6 +471,8 @@ const AppContent: React.FC = () => {
                     onIncludeAll={handleIncludeAll}
                     onExcludeAll={handleExcludeAll}
                     onRefreshShowtimes={() => loadShowtimes(true)}
+                    showQuickStart={showQuickStart}
+                    onDismissQuickStart={dismissQuickStart}
                   />
                 </div>
 
@@ -474,6 +501,10 @@ const AppContent: React.FC = () => {
           <AboutModal
             isOpen={isAboutModalOpen}
             onClose={() => setIsAboutModalOpen(false)}
+          />
+          <QuickStartModal
+            isOpen={isQuickStartModalOpen}
+            onClose={() => setIsQuickStartModalOpen(false)}
           />
         </div>
       </div>
