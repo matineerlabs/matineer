@@ -91,6 +91,19 @@ describe('parseAmcTitle', () => {
     expect(res3.fallbackQuery).toBe('Dune');
   });
 
+  it('generates fallbackQuery for leading possessive prefixes', () => {
+    const res1 = parseAmcTitle("Disney's Hexed", 2026);
+    expect(res1.primaryQuery).toBe("Disney's Hexed");
+    expect(res1.fallbackQuery).toBe('Hexed');
+
+    const res2 = parseAmcTitle("DreamWorks' The Wild Robot", 2026);
+    expect(res2.primaryQuery).toBe("DreamWorks' The Wild Robot");
+    expect(res2.fallbackQuery).toBe('The Wild Robot');
+
+    const res3 = parseAmcTitle("Disney's It", 2026);
+    expect(res3.fallbackQuery).toBeNull();
+  });
+
   it('cleanTitleVariants wraps parseAmcTitle', () => {
     const variants = cleanTitleVariants('Mission: Impossible - The Final Reckoning');
     expect(variants[0]).toBe('Mission: Impossible - The Final Reckoning');
@@ -333,5 +346,57 @@ describe('fetchMetadataSingle', () => {
     // Should reject the detail match because of runtime mismatch on non-exact title
     expect(result.matched_title).toBeNull();
     expect(result.imdb_rating).toBeNull();
+  });
+
+  it("falls back to stripped title when leading possessive primary search misses (e.g. Disney's Hexed)", async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url: any) => {
+      const urlStr = String(url);
+      if (urlStr.includes('/search/movie?query=Disney%27s%20Hexed')) {
+        return {
+          ok: true,
+          json: async () => ({ search: [] }),
+        } as any;
+      }
+      if (urlStr.includes('/search/movie?query=Hexed')) {
+        return {
+          ok: true,
+          json: async () => ({
+            search: [
+              {
+                id: 42001,
+                title: 'Hexed',
+                year: 2026,
+                imdbid: 'tt3000001',
+                score: 72,
+              },
+            ],
+          }),
+        } as any;
+      }
+      if (urlStr.includes('/imdb/movie/tt3000001')) {
+        return {
+          ok: true,
+          json: async () => ({
+            id: 42001,
+            title: 'Hexed',
+            year: 2026,
+            runtime: 95,
+            ratings: [
+              { source: 'tomatoes', value: 81 },
+              { source: 'imdb', value: 7.1 },
+            ],
+            ids: { imdb: 'tt3000001' },
+          }),
+        } as any;
+      }
+      return { ok: false } as any;
+    });
+
+    const result = await fetchMetadataSingle("Disney's Hexed", 95, 2026, 'test_key');
+
+    expect(result.matched_title).toBe('Hexed');
+    expect(result.rt_score).toBe('81%');
+    expect(result.imdb_rating).toBe('7.1');
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
   });
 });

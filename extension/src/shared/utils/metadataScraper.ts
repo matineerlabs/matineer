@@ -151,6 +151,17 @@ export function parseAmcTitle(
     }
   }
 
+  if (!fallbackQuery) {
+    // Strip leading possessive presenter/studio prefix (e.g. "Disney's Hexed" -> "Hexed")
+    const possessiveMatch = primaryQuery.match(/^.{2,}?(?:'s|\u2019s|s'|s\u2019)\s+(.+)$/i);
+    if (possessiveMatch && possessiveMatch[1]) {
+      const stripped = possessiveMatch[1].trim();
+      if (stripped.length >= 3) {
+        fallbackQuery = stripped;
+      }
+    }
+  }
+
   if (fallbackQuery === primaryQuery) {
     fallbackQuery = null;
   }
