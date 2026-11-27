@@ -83,9 +83,9 @@ Once your MDBList API key is saved, Matineer shows Rotten Tomatoes Critics and A
 ### How to Get & Add Your API Key
 
 1. Create or sign in to a free account at [mdblist.com](https://mdblist.com).
-2. Open your MDBList Preferences page and copy your API Key.
-3. In Matineer, click the Settings (gear) icon.
-4. Paste your key into the MDBList API Key box and click Save. Matineer checks that your key works before saving and stores fetched ratings locally for 24 hours.
+2. Open your [MDBList Preferences](https://mdblist.com/preferences/) page, scroll down to the **API Access** dropdown, and copy your API key.
+3. In Matineer, open the **Settings** page (click the gear icon).
+4. Paste your key into the **MDBList API Key** box and click **Save**. Matineer checks that your key works before saving and stores fetched ratings locally for 24 hours.
 
 > Note on matching: Matineer matches theater listings to MDBList using title and year clues. Occasionally a movie's score may be missing or matched to the wrong title, most often for re-releases, special events, or alternate titles.
 
