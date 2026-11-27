@@ -427,26 +427,19 @@ export const MoviesTab: React.FC<MoviesTabProps> = ({
           {/* Integrated Header Pill */}
           {renderedProgress && renderedProgress.isOpen && renderedProgress.status === "running" && (
             <div
-              className={`flex items-center space-x-2.5 pl-3 pr-3.5 py-1 mr-1 sm:mr-1.5 rounded-md bg-blue-100 dark:bg-blue-950/70 border border-blue-300 dark:border-blue-500/40 text-blue-950 dark:text-blue-100 text-xs shadow-sm ${
+              className={`flex items-center space-x-1.5 px-2.5 py-1 mr-1 sm:mr-1.5 rounded-md bg-blue-100 dark:bg-blue-950/70 border border-blue-300 dark:border-blue-500/40 text-blue-950 dark:text-blue-100 text-xs shadow-sm flex-shrink-0 ${
                 isFadingOut ? "animate-badge-out pointer-events-none" : "animate-badge-in"
               }`}
+              title={
+                renderedProgress.currentTitle
+                  ? `Loading ratings (${renderedProgress.current}/${renderedProgress.total}): ${renderedProgress.currentTitle}`
+                  : `Loading ratings (${renderedProgress.current}/${renderedProgress.total})`
+              }
             >
               <Loader2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 animate-spin flex-shrink-0" />
-              <span
-                className="font-medium truncate max-w-[120px] sm:max-w-[180px] text-blue-950 dark:text-blue-100"
-                title={renderedProgress.currentTitle ? `Fetching ${renderedProgress.currentTitle}` : "Updating ratings"}
-              >
-                {renderedProgress.currentTitle ? `Ratings: ${renderedProgress.currentTitle}` : "Updating ratings..."}
+              <span className="font-medium whitespace-nowrap text-blue-950 dark:text-blue-100">
+                Ratings
               </span>
-              <span className="text-blue-800 dark:text-blue-300 font-mono font-semibold text-[11px] flex-shrink-0">
-                ({renderedProgress.current}/{renderedProgress.total})
-              </span>
-              <div className="w-10 sm:w-14 h-1.5 bg-blue-200 dark:bg-dark-surface rounded-full overflow-hidden flex-shrink-0 hidden xs:block">
-                <div
-                  className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-300"
-                  style={{ width: `${metadataPercent}%` }}
-                />
-              </div>
               {onCancelMetadata && (
                 <button
                   onClick={onCancelMetadata}
