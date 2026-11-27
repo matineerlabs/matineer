@@ -1,4 +1,5 @@
 import { MovieDayStatus, UserMovieStatus, isPremiumFormat } from '../types/movie';
+import { resolveAllowedFormats } from '../types/formats';
 import { normalizeMpaRating } from '../utils/movie';
 import theaters from '../data/amc_theaters.json';
 import { cacheRepo } from '../db/repositories/cacheRepo';
@@ -72,9 +73,7 @@ export async function enrichMoviesWithPreferences(
       status =
         savedDay.status ||
         (user_status === UserMovieStatus.ACTIVE ? MovieDayStatus.INCLUDE : MovieDayStatus.EXCLUDE);
-      if (savedDay.allowed_formats && savedDay.allowed_formats.length > 0) {
-        allowed_formats = savedDay.allowed_formats;
-      }
+      allowed_formats = resolveAllowedFormats(formats, savedDay.allowed_formats);
     } else if (user_status !== UserMovieStatus.ACTIVE) {
       status = MovieDayStatus.EXCLUDE;
     }

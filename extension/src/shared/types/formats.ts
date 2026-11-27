@@ -22,6 +22,34 @@ export const SPECIAL_NON_PREMIUM_PATTERNS: readonly RegExp[] = [
 ] as const;
 
 /**
+ * Normalizes a format string for case-insensitive matching, treating empty or
+ * literal "undefined" values as "digital".
+ */
+export function normalizeFormatName(formatName?: string | null): string {
+  const trimmed = formatName?.trim() || '';
+  if (!trimmed || trimmed.toLowerCase() === 'undefined') {
+    return 'digital';
+  }
+  return trimmed.toLowerCase();
+}
+
+/**
+ * Intersects available formats with saved format preferences, falling back to
+ * all available formats when no saved preferences exist or the overlap is empty.
+ */
+export function resolveAllowedFormats(
+  availableFormats: string[],
+  savedFormats?: string[] | null
+): string[] {
+  if (!savedFormats || savedFormats.length === 0) {
+    return availableFormats;
+  }
+  const savedSet = new Set(savedFormats.map(normalizeFormatName));
+  const intersected = availableFormats.filter((f) => savedSet.has(normalizeFormatName(f)));
+  return intersected.length > 0 ? intersected : availableFormats;
+}
+
+/**
  * Checks if a format name represents a special or accessibility showing
  * that should not be classified as a premium experience.
  */

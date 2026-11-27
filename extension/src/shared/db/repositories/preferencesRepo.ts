@@ -1,6 +1,9 @@
 import { db } from '../db';
 import { MovieDayStatus, UserMovieStatus } from '../../types/movie';
 
+export const SELECTION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+const GLOBAL_SELECTION_SCOPE = 'global';
+
 export class PreferencesRepository {
 
   // --- Movie Status (Seen / Wont Watch) ---
@@ -46,52 +49,65 @@ export class PreferencesRepository {
     return records.length;
   }
 
-  // --- Day Selections ---
+  // --- Global Movie Selections (Must See / Include / Exclude & Formats, 30-day TTL) ---
 
-  async setDaySelection(dateStr: string, title: string, status: MovieDayStatus, allowedFormats?: string[] | null): Promise<void> {
+  async setDaySelection(_dateStr: string, title: string, status: MovieDayStatus, allowedFormats?: string[] | null): Promise<void> {
     const titleLower = title.toLowerCase();
-    const id = `${dateStr}|${titleLower}`;
+    const id = titleLower;
+    const existing = await db.dayMovieSelections.get(id);
+    const cutoff = Date.now() - SELECTION_TTL_MS;
+    const activeExistingFormats =
+      existing && existing.date_str === GLOBAL_SELECTION_SCOPE && existing.updated_at >= cutoff
+        ? existing.allowed_formats || null
+        : null;
 
-    if (status === MovieDayStatus.INCLUDE && (!allowedFormats || allowedFormats.length === 0)) {
-      // Default state is Include with no specific formats. We can remove it to save space.
+    const nextFormats =
+      allowedFormats === undefined
+        ? activeExistingFormats
+        : allowedFormats && allowedFormats.length > 0
+          ? allowedFormats
+          : null;
+
+    if (status === MovieDayStatus.INCLUDE && !nextFormats) {
+      // Default state is Include with no specific formats. Remove it to save space.
       await db.dayMovieSelections.delete(id);
     } else {
       await db.dayMovieSelections.put({
-        id: id,
-        date_str: dateStr,
+        id,
+        date_str: GLOBAL_SELECTION_SCOPE,
         movie_title: title,
         movie_title_lower: titleLower,
-        status: status,
-        allowed_formats: allowedFormats || null,
+        status,
+        allowed_formats: nextFormats,
         updated_at: Date.now()
       });
     }
   }
 
-  async batchSetDaySelections(dateStr: string, titles: string[], status: MovieDayStatus): Promise<void> {
+  async batchSetDaySelections(_dateStr: string, titles: string[], status: MovieDayStatus): Promise<void> {
     const now = Date.now();
     const titleLowers = titles.map(t => t.toLowerCase());
 
     await db.transaction('rw', db.dayMovieSelections, async () => {
-      if (status === MovieDayStatus.INCLUDE) {
-        // Fetch existing records to check if they have allowed_formats preserved
-        const existing = await db.dayMovieSelections.where('date_str').equals(dateStr).toArray();
-        const existingMap = new Map(existing.map(r => [r.movie_title_lower, r]));
+      const cutoff = now - SELECTION_TTL_MS;
+      const existing = await db.dayMovieSelections.where('date_str').equals(GLOBAL_SELECTION_SCOPE).toArray();
+      const existingMap = new Map(
+        existing.filter((r) => r.updated_at >= cutoff).map((r) => [r.movie_title_lower, r])
+      );
 
+      if (status === MovieDayStatus.INCLUDE) {
         const toDelete: string[] = [];
         const toPut: any[] = [];
 
         for (let i = 0; i < titles.length; i++) {
           const title = titles[i]!;
           const lower = titleLowers[i]!;
-          const id = `${dateStr}|${lower}`;
           const currentRec = existingMap.get(lower);
 
           if (currentRec && currentRec.allowed_formats && currentRec.allowed_formats.length > 0) {
-            // Keep allowed_formats intact, just update status
             toPut.push({
-              id,
-              date_str: dateStr,
+              id: lower,
+              date_str: GLOBAL_SELECTION_SCOPE,
               movie_title: title,
               movie_title_lower: lower,
               status: MovieDayStatus.INCLUDE,
@@ -99,8 +115,7 @@ export class PreferencesRepository {
               updated_at: now
             });
           } else {
-            // Clean unconfigured Include can be deleted to save space
-            toDelete.push(id);
+            toDelete.push(lower);
           }
         }
 
@@ -111,19 +126,15 @@ export class PreferencesRepository {
           await db.dayMovieSelections.bulkPut(toPut);
         }
       } else {
-        // For EXCLUDE, MUST_SEE, etc.
-        const existing = await db.dayMovieSelections.where('date_str').equals(dateStr).toArray();
-        const existingMap = new Map(existing.map(r => [r.movie_title_lower, r]));
-
         const records = titles.map((title, idx) => {
           const lower = titleLowers[idx]!;
           const currentRec = existingMap.get(lower);
           return {
-            id: `${dateStr}|${lower}`,
-            date_str: dateStr,
+            id: lower,
+            date_str: GLOBAL_SELECTION_SCOPE,
             movie_title: title,
             movie_title_lower: lower,
-            status: status,
+            status,
             allowed_formats: currentRec?.allowed_formats || null,
             updated_at: now
           };
@@ -134,15 +145,30 @@ export class PreferencesRepository {
     });
   }
 
-  async getDaySelectionsForDate(dateStr: string): Promise<Record<string, { status: MovieDayStatus; allowed_formats?: string[] | null }>> {
-    const records = await db.dayMovieSelections.where('date_str').equals(dateStr).toArray();
+  async getDaySelectionsForDate(_dateStr: string): Promise<Record<string, { status: MovieDayStatus; allowed_formats?: string[] | null }>> {
+    const cutoff = Date.now() - SELECTION_TTL_MS;
     const result: Record<string, { status: MovieDayStatus; allowed_formats?: string[] | null }> = {};
-    for (const r of records) {
-      result[r.movie_title_lower] = {
-        status: r.status,
-        allowed_formats: r.allowed_formats
-      };
-    }
+
+    await db.transaction('rw', db.dayMovieSelections, async () => {
+      const allRecords = await db.dayMovieSelections.toArray();
+      const expiredIds: string[] = [];
+
+      for (const r of allRecords) {
+        if (r.date_str !== GLOBAL_SELECTION_SCOPE || r.updated_at < cutoff) {
+          if (r.id) expiredIds.push(r.id);
+          continue;
+        }
+        result[r.movie_title_lower] = {
+          status: r.status,
+          allowed_formats: r.allowed_formats
+        };
+      }
+
+      if (expiredIds.length > 0) {
+        await db.dayMovieSelections.bulkDelete(expiredIds);
+      }
+    });
+
     return result;
   }
 }

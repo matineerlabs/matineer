@@ -1,6 +1,6 @@
 import React from "react";
 import { Movie } from "../../../types/api";
-import { formatComparator, isPremiumFormat } from "../../../../../shared/types/formats";
+import { formatComparator, isPremiumFormat, normalizeFormatName } from "../../../../../shared/types/formats";
 
 export { formatComparator };
 
@@ -35,9 +35,8 @@ export const FormatChipList: React.FC<FormatChipListProps> = ({
           allShowtimesForFormat.length > 0 &&
           allShowtimesForFormat.every((s) => s.is_sold_out);
 
-        const isAllowed =
-          allowedFormats.includes(fmt) ||
-          allowedFormats.includes(displayName);
+        const fmtNorm = normalizeFormatName(fmt);
+        const isAllowed = allowedFormats.some((f) => normalizeFormatName(f) === fmtNorm);
         const isPremFmt = isPremiumFormat(displayName);
         const isOnlyAllowed = isAllowed && allowedFormats.length <= 1;
 

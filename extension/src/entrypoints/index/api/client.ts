@@ -146,11 +146,17 @@ export async function resetMovieStatuses(
   return res.count ?? 0;
 }
 
-export async function updateDaySelection(date_str: string, movie_title: string, status: MovieDayStatus): Promise<void> {
+export async function updateDaySelection(
+  date_str: string,
+  movie_title: string,
+  status: MovieDayStatus,
+  allowed_formats?: string[] | null
+): Promise<void> {
   await sendCommand("UPDATE_DAY_SELECTION", {
     date_str,
     movie_title,
     status,
+    ...(allowed_formats !== undefined ? { allowed_formats } : {}),
   });
 }
 

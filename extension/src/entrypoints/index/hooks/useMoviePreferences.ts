@@ -1,5 +1,6 @@
 ﻿import { MovieDayStatus, UserMovieStatus } from '../../../shared/types/movie';
-import { useState, useMemo, useCallback } from "react";
+import { normalizeFormatName } from '../../../shared/types/formats';
+import { useState, useMemo, useCallback, useRef } from "react";
 import { Movie, PinnedShowing, ShowingItem } from "../types/api";
 import {
   batchUpdateDay,
@@ -17,6 +18,15 @@ export function useMoviePreferences(
   const [pinnedShowing, setPinnedShowing] = useState<PinnedShowing | null>(
     initialPinnedShowing
   );
+  const moviesRef = useRef<Movie[]>(movies);
+  moviesRef.current = movies;
+
+  const getPersistedFormats = (allFormats: string[], allowedFormats: string[]): string[] | null => {
+    const allowedSet = new Set(allowedFormats.map(normalizeFormatName));
+    const allEnabled =
+      allFormats.length > 0 && allFormats.every((f) => allowedSet.has(normalizeFormatName(f)));
+    return allEnabled ? null : allowedFormats;
+  };
 
   const handleUnpinShowing = useCallback((_title?: string) => {
     setPinnedShowing(null);
@@ -25,33 +35,54 @@ export function useMoviePreferences(
   // Pin a specific screening: forces Must See, ensures active and format enabled, and records pinnedShowing
   const handlePinShowing = useCallback(
     (movie: Movie, formatName: string, showing: ShowingItem) => {
-      const normalizeFmt = (f: string) =>
-        !f || f.toLowerCase() === "undefined" ? "digital" : f.trim().toLowerCase();
-      const fmtNorm = normalizeFmt(formatName);
+      const fmtNorm = normalizeFormatName(formatName);
+      const currentMovie =
+        moviesRef.current.find((m) => m.title === movie.title) || movie;
+      const currentAllowed =
+        currentMovie.allowed_formats ?? currentMovie.all_formats ?? [];
+      const isAlreadyAllowed = currentAllowed.some(
+        (f) => normalizeFormatName(f) === fmtNorm
+      );
+      const nextAllowed = isAlreadyAllowed
+        ? currentAllowed
+        : [...currentAllowed, formatName];
+
+      moviesRef.current = moviesRef.current.map((m) =>
+        m.title === movie.title
+          ? {
+              ...m,
+              status: MovieDayStatus.MUST_SEE,
+              user_status: UserMovieStatus.ACTIVE,
+              allowed_formats: nextAllowed,
+            }
+          : m
+      );
 
       onMoviesUpdated((prev) =>
-        prev.map((m) => {
-          if (m.title !== movie.title) return m;
-          const currentAllowed = m.allowed_formats || [];
-          const isAlreadyAllowed = currentAllowed.some(
-            (f) => normalizeFmt(f) === fmtNorm
-          );
-          const nextAllowed = isAlreadyAllowed
-            ? currentAllowed
-            : [...currentAllowed, formatName];
-          return {
-            ...m,
-            status: MovieDayStatus.MUST_SEE,
-            user_status: UserMovieStatus.ACTIVE,
-            allowed_formats: nextAllowed,
-          };
-        })
+        prev.map((m) =>
+          m.title === movie.title
+            ? {
+                ...m,
+                status: MovieDayStatus.MUST_SEE,
+                user_status: UserMovieStatus.ACTIVE,
+                allowed_formats: nextAllowed,
+              }
+            : m
+        )
       );
 
       if (dateStr) {
-        updateDaySelection(dateStr, movie.title, MovieDayStatus.MUST_SEE).catch(() => {});
+        const formatsToPersist = isAlreadyAllowed
+          ? undefined
+          : getPersistedFormats(currentMovie.all_formats || [], nextAllowed);
+        updateDaySelection(
+          dateStr,
+          movie.title,
+          MovieDayStatus.MUST_SEE,
+          formatsToPersist
+        ).catch(() => {});
       }
-      if (movie.user_status !== UserMovieStatus.ACTIVE) {
+      if (currentMovie.user_status !== UserMovieStatus.ACTIVE) {
         updateMovieStatus(movie.title, UserMovieStatus.ACTIVE).catch(() => {});
       }
 
@@ -105,24 +136,22 @@ export function useMoviePreferences(
   // Toggle format allowance for a movie
   const handleFormatToggle = useCallback(
     (title: string, fmt: string) => {
-      const normalizeFmt = (f: string) =>
-        !f || f.toLowerCase() === "undefined" ? "digital" : f.trim().toLowerCase();
-      const fmtNorm = normalizeFmt(fmt);
+      const fmtNorm = normalizeFormatName(fmt);
 
-      const targetMovie = movies.find(
+      const targetMovie = moviesRef.current.find(
         (m) => m.title.trim().toLowerCase() === title.trim().toLowerCase()
       );
       if (!targetMovie) return;
 
       const targetAllowed = targetMovie.allowed_formats || [];
       const isCurrentlyAllowed = targetAllowed.some(
-        (f) => normalizeFmt(f) === fmtNorm
+        (f) => normalizeFormatName(f) === fmtNorm
       );
 
       // Prevent toggling off the last remaining allowed format
       if (isCurrentlyAllowed) {
         const remainingAllowed = targetAllowed.filter(
-          (f) => normalizeFmt(f) !== fmtNorm
+          (f) => normalizeFormatName(f) !== fmtNorm
         );
         if (remainingAllowed.length === 0) {
           return; // At least one format must remain selected
@@ -134,25 +163,37 @@ export function useMoviePreferences(
         pinnedShowing &&
         pinnedShowing.title.trim().toLowerCase() === title.trim().toLowerCase()
       ) {
-        const pinnedFmtNorm = normalizeFmt(pinnedShowing.format_name);
+        const pinnedFmtNorm = normalizeFormatName(pinnedShowing.format_name);
         if (isCurrentlyAllowed && fmtNorm === pinnedFmtNorm) {
           setPinnedShowing(null);
         }
       }
 
-      onMoviesUpdated((prev) =>
-        prev.map((m) => {
-          if (m.title !== title) return m;
-          const currentAllowed = m.allowed_formats || [];
-          const exists = currentAllowed.some((f) => normalizeFmt(f) === fmtNorm);
-          const updated = exists
-            ? currentAllowed.filter((f) => normalizeFmt(f) !== fmtNorm)
-            : [...currentAllowed, fmt];
-          return { ...m, allowed_formats: updated };
-        })
+      const updatedAllowed = isCurrentlyAllowed
+        ? targetAllowed.filter((f) => normalizeFormatName(f) !== fmtNorm)
+        : [...targetAllowed, fmt];
+
+      // Update ref synchronously so back-to-back toggles in the same render tick don't clobber each other
+      moviesRef.current = moviesRef.current.map((m) =>
+        m.title === targetMovie.title ? { ...m, allowed_formats: updatedAllowed } : m
       );
+
+      onMoviesUpdated((prev) =>
+        prev.map((m) =>
+          m.title === targetMovie.title ? { ...m, allowed_formats: updatedAllowed } : m
+        )
+      );
+
+      if (dateStr) {
+        updateDaySelection(
+          dateStr,
+          targetMovie.title,
+          targetMovie.status ?? MovieDayStatus.INCLUDE,
+          getPersistedFormats(targetMovie.all_formats || [], updatedAllowed)
+        ).catch(() => {});
+      }
     },
-    [movies, pinnedShowing, onMoviesUpdated]
+    [dateStr, pinnedShowing, onMoviesUpdated]
   );
 
   // Change user status (seen, wont_watch, active)
@@ -167,15 +208,16 @@ export function useMoviePreferences(
         setPinnedShowing(null);
       }
       const isNowInactive = st !== UserMovieStatus.ACTIVE;
+      const nextDayStatus = isNowInactive ? MovieDayStatus.EXCLUDE : MovieDayStatus.INCLUDE;
       onMoviesUpdated((prev) =>
         prev.map((m) => {
           if (m.title !== title) return m;
-          return { ...m, user_status: st, status: isNowInactive ? MovieDayStatus.EXCLUDE : m.status };
+          return { ...m, user_status: st, status: nextDayStatus };
         })
       );
       await updateMovieStatus(title, st);
-      if (isNowInactive && dateStr) {
-        await updateDaySelection(dateStr, title, MovieDayStatus.EXCLUDE);
+      if (dateStr) {
+        await updateDaySelection(dateStr, title, nextDayStatus);
       }
     },
     [dateStr, pinnedShowing, onMoviesUpdated]
@@ -196,6 +238,7 @@ export function useMoviePreferences(
 
   // Include all active movies
   const handleIncludeAll = useCallback(async () => {
+    setPinnedShowing(null);
     const activeMovies = movies.filter((m) => m.user_status === UserMovieStatus.ACTIVE);
     const titles = activeMovies.map((m) => m.title);
     onMoviesUpdated((prev) =>

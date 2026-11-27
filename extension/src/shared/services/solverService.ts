@@ -1,4 +1,5 @@
 import { MovieDayStatus, isAccessibilityFormat } from '../types/movie';
+import { normalizeFormatName, resolveAllowedFormats } from '../types/formats';
 import { cacheRepo } from '../db/repositories/cacheRepo';
 import { preferencesRepo } from '../db/repositories/preferencesRepo';
 import { ScheduleOptimizer, createMovieShowing, MovieShowing } from '../utils/scheduleSolver';
@@ -34,19 +35,20 @@ export async function solveSchedulesService(
     if (status === MovieDayStatus.EXCLUDE) continue;
     if (status === MovieDayStatus.MUST_SEE) requiredTitles.add(m.title);
 
-    let allowedFmts = conf?.allowed_formats;
-    if (!allowedFmts || allowedFmts.length === 0) {
-      if (req.movie_formats && req.movie_formats[m.title]) {
-        allowedFmts = req.movie_formats[m.title];
-      } else {
-        allowedFmts = m.all_formats || Object.keys(m.showings_by_format || {});
-      }
-    }
-    const allowedSet = new Set((allowedFmts || []).map((f) => f.toLowerCase()));
+    const availableFmts =
+      m.all_formats && m.all_formats.length > 0
+        ? m.all_formats
+        : Object.keys(m.showings_by_format || {});
+    const requestedFmts = req.movie_formats?.[m.title];
+    const allowedFmts = resolveAllowedFormats(
+      availableFmts,
+      requestedFmts && requestedFmts.length > 0 ? requestedFmts : conf?.allowed_formats
+    );
+    const allowedSet = new Set(allowedFmts.map(normalizeFormatName));
     const userAllowsAccessibility = Array.from(allowedSet).some((f) => isAccessibilityFormat(f));
 
     for (const [fmt, items] of Object.entries(m.showings_by_format || {})) {
-      const isAllowedFormat = allowedSet.has(fmt.toLowerCase());
+      const isAllowedFormat = allowedSet.has(normalizeFormatName(fmt));
       if (!isAllowedFormat) {
         // Never fallback into accessibility formats unless user already opted into one for this movie
         if (!userAllowsAccessibility && isAccessibilityFormat(fmt)) {

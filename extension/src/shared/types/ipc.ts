@@ -71,7 +71,7 @@ export type UpdateDaySelectionMessage = {
     date_str: string;
     movie_title: string;
     status: MovieDayStatus;
-    allowed_formats?: string[];
+    allowed_formats?: string[] | null;
   };
 };
 export type UpdateDaySelectionResponse = { success: boolean };

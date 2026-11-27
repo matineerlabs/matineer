@@ -6,6 +6,8 @@ import {
   isAccessibilityFormat,
   isNonPremiumSpecialFormat,
   formatComparator,
+  normalizeFormatName,
+  resolveAllowedFormats,
 } from "../formats";
 
 describe("shared/types/formats", () => {
@@ -86,6 +88,24 @@ describe("shared/types/formats", () => {
       const formats = ["Digital", "IMAX", "Dolby Cinema", "3D"];
       const sorted = [...formats].sort(formatComparator);
       expect(sorted).toEqual(["Dolby Cinema", "IMAX", "3D", "Digital"]);
+    });
+  });
+
+  describe("normalizeFormatName & resolveAllowedFormats", () => {
+    it("normalizes empty, undefined, and mixed-case format names", () => {
+      expect(normalizeFormatName("")).toBe("digital");
+      expect(normalizeFormatName("undefined")).toBe("digital");
+      expect(normalizeFormatName(null)).toBe("digital");
+      expect(normalizeFormatName("  IMAX with Laser ")).toBe("imax with laser");
+    });
+
+    it("intersects saved formats with available formats and falls back when disjoint", () => {
+      expect(resolveAllowedFormats(["IMAX", "Dolby", "Digital"], ["imax", "dolby"])).toEqual([
+        "IMAX",
+        "Dolby",
+      ]);
+      expect(resolveAllowedFormats(["Digital"], ["IMAX", "Dolby"])).toEqual(["Digital"]);
+      expect(resolveAllowedFormats(["IMAX", "Digital"], null)).toEqual(["IMAX", "Digital"]);
     });
   });
 });
